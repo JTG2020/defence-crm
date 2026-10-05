@@ -5,8 +5,13 @@
 
 # Client materials and bulky source assets (never commit)
 Ram Prasad*
+Inverbrass*
 _extracted/
 Requirements.pdf
+
+# Agent Manager state and worktrees (never source)
+.kilo/worktrees/
+.kilo/agent-manager.json
 
 # Dependencies and build output
 node_modules/

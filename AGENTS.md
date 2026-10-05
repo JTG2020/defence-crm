@@ -145,3 +145,5 @@ delete it, and do not make it pass by changing what it asks. If it looks wrong, 
 
 All documents for planning and executing this project will be in the docs/ directory.
 Please review the docs/PLAN.md document before proceeding. Create this file if doesn't exit.
+All SQL lives in the supabase/ folder: supabase/migrations/ (numbered, in order) and
+supabase/demo/ (standalone demo blocks), with supabase/apply_all.sql as the concatenation.

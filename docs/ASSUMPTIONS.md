@@ -18,6 +18,7 @@ Cross-reference: `docs/PRD.md` §6 (Questions 1–15).
 - **Rationale:** the question is phrased as if subtracting a prior commitment is the expected behaviour, which only matters if capacity is shared.
 - **Risk:** H.
 - **If wrong:** model capacity as an explicit per-OEM quantity plus a commitment ledger, so global vs per-order is a configuration flag, not a rewrite.
+- **Implemented (2026-10-05, migration `0015`):** capacity is explicit data — `oem_products.declared_capacity` — with a per-OEM flag `oems.capacity_shared` (default `true` = global pool, matching this assumption). The view `oem_product_capacity` derives `firm_committed`, `available` and `over_committed`, treating an undeclared capacity as unknown (never flagged). Overturning A1 is therefore a setting change plus a scope change in that one view, not a rebuild; the requirement screen flags a line whose firm commitment puts its OEM over declared capacity.
 - **Status:** CLOSED-BY-ASSUMPTION — confirm with Ram.
 
 ### A2 (PRD Q8) — line-item granularity
