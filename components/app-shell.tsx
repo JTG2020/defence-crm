@@ -55,8 +55,7 @@ export function AppShell({
     <div className="flex h-screen w-full overflow-hidden">
       <aside className="hidden h-screen w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card p-3 md:flex">
         <div className="px-2 py-3">
-          <div className="text-sm font-semibold">Requirement Desk</div>
-          <div className="text-xs text-muted-foreground">Defence contract CRM</div>
+          <div className="text-sm font-semibold leading-tight">Defence contract CRM</div>
         </div>
         <nav className="mt-2 flex flex-col gap-0.5">
           {NAV.map((item) => {
@@ -87,7 +86,7 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold md:hidden">Requirement Desk</span>
+            <span className="text-sm font-semibold md:hidden">Defence contract CRM</span>
           </div>
           <div className="flex items-center gap-2">
             {userEmail ? (

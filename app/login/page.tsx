@@ -18,7 +18,7 @@ export default async function LoginPage({
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-4">
       <div>
-        <h1 className="text-lg font-semibold">Requirement Desk</h1>
+        <h1 className="text-lg font-semibold">Defence contract CRM</h1>
         <p className="text-sm text-muted-foreground">Sign in to the defence contract CRM.</p>
       </div>
 

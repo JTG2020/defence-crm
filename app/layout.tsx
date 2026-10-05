@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Requirement Desk",
+  title: "Defence contract CRM",
   description: "Defence contract CRM.",
 };
 
