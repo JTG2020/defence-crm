@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 import { LOSS_REASONS } from "@/lib/constants";
 import { isISODateString } from "@/lib/dates";
 import type { LossReason } from "@/lib/types";
+
+// An RLS-blocked UPDATE matches zero rows and returns no error. Treat that as a failure, never a
+// silent no-op, so a denied or stale write is visible instead of looking successful.
+const NOTHING_CHANGED =
+  "Nothing was changed. You may not have permission to edit this record, or it no longer exists.";
 import { createServerSupabase } from "@/lib/supabase/server";
 import {
   commitmentSchema,
@@ -112,7 +117,7 @@ export async function updateOemAction(formData: FormData) {
     .filter(Boolean);
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("oems")
     .update({
       name: data.name,
@@ -123,9 +128,13 @@ export async function updateOemAction(formData: FormData) {
       contact_email: data.contact_email ? data.contact_email : null,
       capacity_shared: data.capacity_shared === "true",
     })
-    .eq("id", data.id);
+    .eq("id", data.id)
+    .select("id");
   if (error) {
     redirect(`/oems/${data.id}?error=${encodeURIComponent(error.message)}`);
+  }
+  if (!updated || updated.length === 0) {
+    redirect(`/oems/${data.id}?error=${encodeURIComponent(NOTHING_CHANGED)}`);
   }
   revalidatePath(`/oems/${data.id}`);
   revalidatePath("/oems");
@@ -167,12 +176,16 @@ export async function setOemProductCapacityAction(formData: FormData) {
     redirect(`/oems/${oemId}?error=${encodeURIComponent(message)}`);
   }
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("oem_products")
     .update({ declared_capacity: parsed.data.declared_capacity })
-    .eq("id", parsed.data.id);
+    .eq("id", parsed.data.id)
+    .select("id");
   if (error) {
     redirect(`/oems/${oemId}?error=${encodeURIComponent(error.message)}`);
+  }
+  if (!updated || updated.length === 0) {
+    redirect(`/oems/${oemId}?error=${encodeURIComponent(NOTHING_CHANGED)}`);
   }
   revalidatePath(`/oems/${oemId}`);
   redirect(`/oems/${oemId}`);
@@ -246,12 +259,16 @@ export async function setQuoteLinePriceAction(formData: FormData) {
     redirect("/quotes?error=" + encodeURIComponent("Final price must be zero or greater"));
   }
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("quote_version_lines")
     .update({ final_price: price })
-    .eq("id", lineId);
+    .eq("id", lineId)
+    .select("id");
   if (error) {
     redirect("/quotes?error=" + encodeURIComponent(error.message));
+  }
+  if (!updated || updated.length === 0) {
+    redirect("/quotes?error=" + encodeURIComponent(NOTHING_CHANGED));
   }
   revalidatePath("/quotes");
   redirect("/quotes");
@@ -458,12 +475,16 @@ export async function runRemindersAction() {
 export async function completeTaskAction(formData: FormData) {
   const taskId = String(formData.get("task_id") ?? "");
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("tasks")
     .update({ completed_at: new Date().toISOString() })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .select("id");
   if (error) {
     redirect("/tasks?error=" + encodeURIComponent(error.message));
+  }
+  if (!updated || updated.length === 0) {
+    redirect("/tasks?error=" + encodeURIComponent(NOTHING_CHANGED));
   }
   revalidatePath("/tasks");
   revalidatePath("/");
@@ -482,12 +503,16 @@ export async function recordLossAction(formData: FormData) {
   }
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("requirements")
     .update({ status: "lost", loss_reason: reason })
-    .eq("id", requirementId);
+    .eq("id", requirementId)
+    .select("id");
   if (error) {
     redirect(`/requirements/${requirementId}?error=${encodeURIComponent(error.message)}`);
+  }
+  if (!updated || updated.length === 0) {
+    redirect(`/requirements/${requirementId}?error=${encodeURIComponent(NOTHING_CHANGED)}`);
   }
   revalidatePath(`/requirements/${requirementId}`);
   revalidatePath("/requirements");

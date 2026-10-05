@@ -90,6 +90,31 @@ so it must be correct.
 3. Open **/data** - it should read "Connected - N rows" (this page reads as the signed-in session,
    so it is the honest test of auth + RLS).
 
+## Preview mode - no sign-in (temporary)
+
+To let people use the app without logging in, two things are needed: skip the gate, and let an
+anonymous visitor read the data. RLS normally gives an anonymous visitor zero rows, so the gate
+alone would show empty screens.
+
+1. Set the env var `AUTH_DISABLED=true` in Vercel (and locally in `.env`) and redeploy. The proxy
+   (`proxy.ts`) then skips the sign-in check entirely.
+2. In the Supabase SQL editor, run ONE of:
+   - `supabase/demo/011_preview_anon_read.sql` - **read-only** preview (SELECT only).
+   - `supabase/demo/012_preview_anon_write.sql` - **read + insert + update** (includes read). Use
+     this when judges need to create and edit records.
+
+**WARNING:** either block exposes the rows to **anyone with the URL**, and `012` lets anyone who has
+it **change** the data. Use it only on a private or Deployment-Protected deployment, on demo data,
+and remove it when the demo is over. Neither block creates a DELETE policy, so rows cannot be
+removed. `audit_log` and `profiles` stay closed.
+
+**Restoring demo data:** the seeds are idempotent - re-run `supabase/demo/003` through `010` to top
+the data back up after judges have edited it.
+
+**To restore invite-only sign-in:** remove `AUTH_DISABLED` in Vercel and redeploy, and run the
+reverse statements at the bottom of the block you applied (they drop the `anon_read` / `anon_insert`
+/ `anon_update` policies and revoke the grants).
+
 ## Scheduling the reminder job (pending)
 
 The follow-up generator (`public.generate_followup_tasks()`) runs only when you press **Run reminders

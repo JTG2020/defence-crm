@@ -8,6 +8,13 @@ import { supabaseConfig } from "./lib/supabase/config";
 // If the session check throws, we never surface a platform 500: the failure is logged and the
 // visitor is sent to /login, which is public and will render the honest reason.
 export async function proxy(request: NextRequest) {
+  // PREVIEW MODE: set AUTH_DISABLED=true to skip the sign-in gate entirely. Pair it with the
+  // temporary anon read policies in supabase/demo/011_preview_anon_read.sql, or screens are empty.
+  // Remove the env var (and the policies) to restore invite-only sign-in.
+  if (process.env.AUTH_DISABLED === "true") {
+    return NextResponse.next({ request });
+  }
+
   const path = request.nextUrl.pathname;
   const isAuthRoute = path === "/login" || path.startsWith("/auth");
 
@@ -38,18 +45,27 @@ export async function proxy(request: NextRequest) {
       },
     });
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // getClaims() verifies the JWT locally (cached JWKS) - no network round-trip on the happy path,
+    // which is what makes every request slow. Fall back to getUser() only if it errors.
+    let signedIn = false;
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+    if (claimsError) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      signedIn = !!user;
+    } else {
+      signedIn = !!claimsData?.claims;
+    }
 
-    if (!user && !isAuthRoute) {
+    if (!signedIn && !isAuthRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.search = "";
       url.searchParams.set("next", path);
       return NextResponse.redirect(url);
     }
-    if (user && path === "/login") {
+    if (signedIn && path === "/login") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       url.search = "";
