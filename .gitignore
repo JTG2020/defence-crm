@@ -1,0 +1,25 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Client materials and bulky source assets (never commit)
+Ram Prasad*
+_extracted/
+Requirements.pdf
+
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Logs, OS and editor cruft
+*.log
+npm-debug.log*
+.DS_Store
+.vercel
+.idea/
