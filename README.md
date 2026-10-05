@@ -1,8 +1,10 @@
 # Requirement Desk
 
-Defence contract CRM: requirements with line-item coverage, OEM sourcing, quotes, orders, PDI,
-delivery, payments, commission, documents and follow-ups. Next.js App Router (TypeScript strict) on
-Supabase (Postgres, Auth, RLS). Planning and evidence live in `docs/`; start with `docs/PLAN.md`.
+Defence contract CRM. Front of the funnel: **Leads** captured from a call, WhatsApp, referral,
+GeM, a portal or a direct enquiry, moved through stages and followed up. Behind them, the tender
+machinery: requirements with line-item coverage, OEM sourcing, quotes, orders, PDI, delivery,
+payments, commission, documents and follow-ups. Next.js App Router (TypeScript strict) on Supabase
+(Postgres, Auth, RLS). Planning and evidence live in `docs/`; start with `docs/PLAN.md`.
 
 ## Local development
 
@@ -30,8 +32,8 @@ variable.
 
 ## Database setup (once, in the Supabase SQL editor)
 
-1. Apply the schema: run the whole of `supabase/apply_all.sql` (migrations `0001`-`0015`, in order).
-2. Seed demo data: run `supabase/demo/003` through `supabase/demo/010` in order. Do **not** run
+1. Apply the schema: run the whole of `supabase/apply_all.sql` (migrations `0001`-`0016`, in order).
+2. Seed demo data: run `supabase/demo/003` through `supabase/demo/013` in order. Do **not** run
    `demo/001` or `demo/002` on a fresh schema - they create a throwaway `requirements` table that
    `0001` already defines.
 3. Apply `migrations/0006` before creating users (its trigger writes the `profiles` row that RLS
@@ -90,15 +92,15 @@ so it must be correct.
 3. Open **/data** - it should read "Connected - N rows" (this page reads as the signed-in session,
    so it is the honest test of auth + RLS).
 
-## Preview mode - no sign-in (temporary)
+## Preview mode - no sign-in (default)
 
-To let people use the app without logging in, two things are needed: skip the gate, and let an
-anonymous visitor read the data. RLS normally gives an anonymous visitor zero rows, so the gate
-alone would show empty screens.
+Sign-in is **off by default** so the deployed demo is usable without credentials: `proxy.ts` only
+requires a session when `AUTH_REQUIRED=true`. Because the proxy's env is inlined at build time, set
+`AUTH_REQUIRED` in Vercel **and redeploy** to take effect.
 
-1. Set the env var `AUTH_DISABLED=true` in Vercel (and locally in `.env`) and redeploy. The proxy
-   (`proxy.ts`) then skips the sign-in check entirely.
-2. In the Supabase SQL editor, run ONE of:
+To let an anonymous visitor read and write the data, run the anon policies:
+
+In the Supabase SQL editor, run ONE of:
    - `supabase/demo/011_preview_anon_read.sql` - **read-only** preview (SELECT only).
    - `supabase/demo/012_preview_anon_write.sql` - **read + insert + update** (includes read). Use
      this when judges need to create and edit records.

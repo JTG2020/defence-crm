@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { LOSS_REASONS } from "@/lib/constants";
+import { LEAD_SOURCES, LEAD_STAGES, LOSS_REASONS } from "@/lib/constants";
 import { isISODateString } from "@/lib/dates";
-import type { LossReason } from "@/lib/types";
+import type { LeadSource, LeadStage, LossReason } from "@/lib/types";
 
 // An RLS-blocked UPDATE matches zero rows and returns no error. Treat that as a failure, never a
 // silent no-op, so a denied or stale write is visible instead of looking successful.
@@ -489,6 +489,67 @@ export async function completeTaskAction(formData: FormData) {
   revalidatePath("/tasks");
   revalidatePath("/");
   redirect("/tasks");
+}
+
+// Capture a lead from a call, WhatsApp, referral, GeM, a portal or a direct enquiry.
+export async function createLeadAction(formData: FormData) {
+  const source = String(formData.get("source") ?? "call");
+  const stage = String(formData.get("stage") ?? "new");
+  const name = String(formData.get("name") ?? "").trim();
+
+  if (!name) {
+    redirect("/leads?error=" + encodeURIComponent("A name is required for a lead"));
+  }
+  if (!LEAD_SOURCES.includes(source as LeadSource)) {
+    redirect("/leads?error=" + encodeURIComponent("Choose a valid source"));
+  }
+  if (!LEAD_STAGES.includes(stage as LeadStage)) {
+    redirect("/leads?error=" + encodeURIComponent("Choose a valid stage"));
+  }
+
+  const followUp = String(formData.get("next_follow_up") ?? "");
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("leads").insert({
+    source,
+    name,
+    company: String(formData.get("company") ?? "").trim() || null,
+    phone: String(formData.get("phone") ?? "").trim() || null,
+    email: String(formData.get("email") ?? "").trim() || null,
+    product_note: String(formData.get("product_note") ?? "").trim() || null,
+    stage,
+    next_follow_up: isISODateString(followUp) ? followUp : null,
+    owner: String(formData.get("owner") ?? "").trim() || null,
+    is_demo: false,
+  });
+  if (error) {
+    redirect("/leads?error=" + encodeURIComponent(error.message));
+  }
+  revalidatePath("/leads");
+  revalidatePath("/");
+  redirect("/leads");
+}
+
+export async function setLeadStageAction(formData: FormData) {
+  const leadId = String(formData.get("lead_id") ?? "");
+  const stage = String(formData.get("stage") ?? "");
+  if (!leadId || !LEAD_STAGES.includes(stage as LeadStage)) {
+    redirect("/leads?error=" + encodeURIComponent("Choose a valid stage"));
+  }
+  const supabase = await createServerSupabase();
+  const { data: updated, error } = await supabase
+    .from("leads")
+    .update({ stage })
+    .eq("id", leadId)
+    .select("id");
+  if (error) {
+    redirect("/leads?error=" + encodeURIComponent(error.message));
+  }
+  if (!updated || updated.length === 0) {
+    redirect("/leads?error=" + encodeURIComponent(NOTHING_CHANGED));
+  }
+  revalidatePath("/leads");
+  revalidatePath("/");
+  redirect("/leads");
 }
 
 // Record a structured loss. Status and reason are set together; the DB check constraint requires

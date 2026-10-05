@@ -16,6 +16,7 @@ import {
   dashboard,
   documentsWithStatus,
   invoiceAgeing,
+  listLeadFollowUpsDue,
   listTasks,
   listUncoveredLines,
   listUpcomingDeadlines,
@@ -26,13 +27,14 @@ import type { LossReason } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
-  const [data, uncovered, docs, tasks, deadlines, ageing] = await Promise.all([
+  const [data, uncovered, docs, tasks, deadlines, ageing, leadFollowUps] = await Promise.all([
     dashboard(),
     listUncoveredLines(),
     documentsWithStatus(),
     listTasks(),
     listUpcomingDeadlines(14),
     invoiceAgeing(),
+    listLeadFollowUpsDue(),
   ]);
   const now = new Date();
 
@@ -104,7 +106,45 @@ export default async function TodayPage() {
           sub={`${data.winCount} won · ${data.lossCount} lost`}
           href="/history"
         />
+        <Stat
+          label="Lead follow-ups due"
+          value={data.leadFollowUpsDue}
+          sub="Calls, WhatsApp, referrals"
+          tone={data.leadFollowUpsDue > 0 ? "danger" : "default"}
+          href="/leads"
+        />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lead follow-ups due today ({leadFollowUps.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {leadFollowUps.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No lead needs a follow-up today.{" "}
+              <Link href="/leads" className="text-primary hover:underline">
+                Open Leads
+              </Link>
+            </p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {leadFollowUps.slice(0, 8).map((lead) => (
+                <li key={lead.id} className="flex items-center justify-between gap-2">
+                  <Link href="/leads" className="hover:text-primary hover:underline">
+                    {lead.name}
+                    {lead.company ? ` · ${lead.company}` : ""}
+                  </Link>
+                  <span className="tabular-nums text-xs text-muted-foreground">
+                    {lead.phone ?? ""}
+                    {lead.next_follow_up ? ` · ${formatDate(lead.next_follow_up)}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

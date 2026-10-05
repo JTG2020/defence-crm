@@ -3,6 +3,8 @@ import type {
   CommitmentKind,
   CoverageState,
   DocumentType,
+  LeadSource,
+  LeadStage,
   LossReason,
   OemApprovalStatus,
   OrderStatus,
@@ -90,6 +92,53 @@ export const QUOTE_STATUS_VARIANT: Record<QuoteStatus, StatusVariant> = {
   approved: "success",
   rejected: "danger",
   superseded: "neutral",
+};
+
+export const LEAD_SOURCES: LeadSource[] = [
+  "call",
+  "whatsapp",
+  "referral",
+  "gem",
+  "portal",
+  "direct",
+  "other",
+];
+
+export const LEAD_SOURCE_LABEL: Record<LeadSource, string> = {
+  call: "Call",
+  whatsapp: "WhatsApp",
+  referral: "Referral",
+  gem: "GeM",
+  portal: "Portal",
+  direct: "Direct",
+  other: "Other",
+};
+
+export const LEAD_STAGES: LeadStage[] = [
+  "new",
+  "contacted",
+  "qualified",
+  "quoted",
+  "won",
+  "lost",
+];
+
+export const LEAD_STAGE_LABEL: Record<LeadStage, string> = {
+  new: "New",
+  contacted: "Contacted",
+  qualified: "Qualified",
+  quoted: "Quoted",
+  won: "Won",
+  lost: "Lost",
+};
+
+export const LEAD_STAGE_VARIANT: Record<LeadStage, StatusVariant> = {
+  new: "info",
+  contacted: "info",
+  qualified: "warning",
+  quoted: "warning",
+  won: "success",
+  lost: "danger",
 };
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {

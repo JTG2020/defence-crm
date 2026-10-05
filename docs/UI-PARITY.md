@@ -21,7 +21,7 @@ not built.
 | History & losses | search + loss capture + win/loss | have (search, record loss) | `pg_trgm` ranking; comparable quotes/prices |
 | Ask | plain-language answers | have (deterministic) | more patterns |
 | Activity | audit trail screen | have (read view over `audit_log`, owner-only) | filters by entity/actor |
-| Leads | separate leads module | deliberately absent | the brief has no lead entity; the RFI is the lead |
+| Leads | lead capture from a call/WhatsApp/referral, stages, follow-ups due today | have (Leads screen: source, name, company, phone, enquiry, stage, next follow-up; "Lead follow-ups due today" on Today) | convert a lead into a requirement |
 | Global | top-bar search, role-aware UI, remove demo data | missing | top-bar search; role-conditional UI (RLS-06); demo-data removal |
 
 ## Why these were missed (post-mortem, one paragraph)

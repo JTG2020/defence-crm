@@ -2,18 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseConfig } from "./lib/supabase/config";
 
-// Inlined at build time (Edge runtime), so AUTH_DISABLED must be present BEFORE the build:
-// set it in Vercel, then redeploy. Parse tolerantly so "TRUE", "1", "on" or a stray space work.
-const AUTH_DISABLED_RAW = process.env.AUTH_DISABLED;
-const AUTH_DISABLED =
-  AUTH_DISABLED_RAW !== undefined &&
-  ["true", "1", "yes", "on"].includes(AUTH_DISABLED_RAW.trim().toLowerCase());
-if (AUTH_DISABLED_RAW !== undefined && !AUTH_DISABLED) {
-  console.warn(
-    "[proxy] AUTH_DISABLED is set but not recognised as true:",
-    JSON.stringify(AUTH_DISABLED_RAW),
-  );
-}
+// Sign-in is OFF by default so the deployed demo is usable without credentials (e.g. for judges).
+// Set AUTH_REQUIRED=true in Vercel AND REDEPLOY to require sign-in again: this value is inlined at
+// build time in the Edge runtime, so adding the env var alone does nothing until a new build.
+const AUTH_REQUIRED = process.env.AUTH_REQUIRED === "true";
 
 // Next 16 "proxy" (the former middleware). Refreshes the Supabase session cookie and gates every
 // route behind sign-in.
@@ -21,9 +13,8 @@ if (AUTH_DISABLED_RAW !== undefined && !AUTH_DISABLED) {
 // If the session check throws, we never surface a platform 500: the failure is logged and the
 // visitor is sent to /login, which is public and will render the honest reason.
 export async function proxy(request: NextRequest) {
-  // PREVIEW MODE: AUTH_DISABLED=true skips the sign-in gate. Pair it with the anon policies in
-  // supabase/demo/012_preview_anon_write.sql, or screens are empty. Remove it to restore sign-in.
-  if (AUTH_DISABLED) {
+  // Sign-in is not required by default. AUTH_REQUIRED=true turns the gate back on.
+  if (!AUTH_REQUIRED) {
     return NextResponse.next({ request });
   }
 

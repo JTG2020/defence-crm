@@ -19,7 +19,7 @@ begin
   foreach t in array array[
     'requirements','requirement_lines','oems','oem_products','commitments','oem_requests',
     'quotes','quote_versions','quote_version_lines','orders','order_lines','pdi_records',
-    'deliveries','payments','commission_invoices','tasks'
+    'deliveries','payments','commission_invoices','tasks','leads'
   ] loop
     -- privileges (RLS is the row filter on top of these)
     execute format('grant select, insert, update on public.%I to anon', t);

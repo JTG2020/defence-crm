@@ -8,6 +8,7 @@ import type {
   CoverageState,
   Delivery,
   DocumentRecord,
+  Lead,
   LossReason,
   Oem,
   OemInvoice,
@@ -403,6 +404,53 @@ export async function searchHistory(query: string): Promise<HistoryResult[]> {
     );
 }
 
+// The leads table arrives with migration 0016. Until it is applied (rollout window), treat a
+// missing table as "no leads yet" and log it, rather than breaking Today and the Leads screen.
+function isMissingTable(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return (
+    error.code === "PGRST205" ||
+    /could not find the table|does not exist|schema cache/i.test(error.message ?? "")
+  );
+}
+
+export async function listLeads(): Promise<Lead[]> {
+  const supabase = await client();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) {
+    if (isMissingTable(error)) {
+      console.warn("[db] leads table missing - apply migration 0016_leads.sql");
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return (data ?? []) as Lead[];
+}
+
+// Leads that are still open and whose follow-up date is today or past.
+export async function listLeadFollowUpsDue(now: Date = new Date()): Promise<Lead[]> {
+  const supabase = await client();
+  const today = now.toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .not("stage", "in", "(won,lost)")
+    .not("next_follow_up", "is", null)
+    .lte("next_follow_up", today)
+    .order("next_follow_up", { ascending: true });
+  if (error) {
+    if (isMissingTable(error)) {
+      console.warn("[db] leads table missing - apply migration 0016_leads.sql");
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return (data ?? []) as Lead[];
+}
+
 export async function listTasks(): Promise<Task[]> {
   const supabase = await client();
   const { data, error } = await supabase
@@ -573,6 +621,7 @@ export interface DashboardData {
   paymentsPending: number;
   paymentsPendingAmount: number;
   followupsOpen: number;
+  leadFollowUpsDue: number;
   documentsExpiring: number;
   ordersAtRisk: number;
   uncoveredLines: number;
@@ -587,7 +636,7 @@ export interface DashboardData {
 
 export async function dashboard(now: Date = new Date()): Promise<DashboardData> {
   const supabase = await client();
-  const [requirements, quotesRes, requestsRes, ordersRes, stagesRes, invoices, tasks, docs, uncovered] =
+  const [requirements, quotesRes, requestsRes, ordersRes, stagesRes, invoices, tasks, leadFollowUps, docs, uncovered] =
     await Promise.all([
       listRequirements(),
       supabase.from("quotes").select("status"),
@@ -596,6 +645,7 @@ export async function dashboard(now: Date = new Date()): Promise<DashboardData> 
       supabase.from("order_stages").select("*"),
       listOemInvoicesWithBalance(),
       listTasks(),
+      listLeadFollowUpsDue(now),
       documentsWithStatus(now),
       listUncoveredLines(),
     ]);
@@ -652,6 +702,7 @@ export async function dashboard(now: Date = new Date()): Promise<DashboardData> 
     .filter((i) => i.outstanding > 0)
     .reduce((sum, i) => sum + i.outstanding, 0);
   const followupsOpen = tasks.length;
+  const leadFollowUpsDue = leadFollowUps.length;
 
   const winCount = requirements.filter((r) => r.status === "won").length;
   const lossCount = requirements.filter((r) => r.status === "lost").length;
@@ -696,6 +747,7 @@ export async function dashboard(now: Date = new Date()): Promise<DashboardData> 
     paymentsPending,
     paymentsPendingAmount,
     followupsOpen,
+    leadFollowUpsDue,
     documentsExpiring,
     ordersAtRisk,
     uncoveredLines: uncovered.length,

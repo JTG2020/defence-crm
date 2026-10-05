@@ -283,6 +283,25 @@ export interface CommissionInvoice {
   is_demo: boolean;
 }
 
+export type LeadSource = "call" | "whatsapp" | "referral" | "gem" | "portal" | "direct" | "other";
+export type LeadStage = "new" | "contacted" | "qualified" | "quoted" | "won" | "lost";
+
+export interface Lead {
+  id: string;
+  source: LeadSource;
+  name: string;
+  company: string | null;
+  phone: string | null;
+  email: string | null;
+  product_note: string | null;
+  stage: LeadStage;
+  next_follow_up: string | null;
+  owner: string | null;
+  converted_requirement_id: string | null;
+  is_demo: boolean;
+  created_at: string;
+}
+
 export interface Task {
   id: string;
   kind: string;

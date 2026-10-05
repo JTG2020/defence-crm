@@ -13,11 +13,13 @@ This file is the short index AGENTS.md §13 asks for. It does not repeat the doc
 
 ## Where the build actually is (2026-10-05)
 
-Live against Supabase (project `ekenmwvyrjtkvlmjecbl`): schema applied (RLS on), auth (invite-only,
-signed-in cookie sessions), and every screen reads Postgres. Working end to end: Today, Requirements
-(list/detail/edit, coverage, commitments, draft quote, OEM request, loss), OEMs (list/detail/edit,
-products, capacity), Quotes (draft → set final price → approve → order), Orders (PDI, delivery),
-Payments (invoice, payment, commission), Documents, Follow-ups, History, Ask, Activity.
+Live against Supabase (project `ekenmwvyrjtkvlmjecbl`): schema applied (RLS on). Sign-in is off by
+default (`AUTH_REQUIRED=true` to turn it on) so the judging demo works without credentials. Every
+screen reads Postgres. Working end to end: **Leads** (capture from call/WhatsApp/referral/GeM/portal/
+direct, stages, today's follow-ups), Today, Requirements (list/detail/edit, coverage, commitments,
+draft quote, OEM request, loss), OEMs (list/detail/edit, products, capacity), Quotes (draft → set
+final price → approve → order), Orders (PDI, delivery), Payments (invoice, payment, commission),
+Documents, Follow-ups, History, Ask, Activity.
 
 Run: `npm install`, `npm test`, `npm run build`, `npm start`; or `npm run dev` then
 http://localhost:3000. SQL syntax check: `npm run sql:check`.

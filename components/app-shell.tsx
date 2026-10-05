@@ -8,6 +8,7 @@ import {
   FileText,
   History,
   LayoutDashboard,
+  Users,
   Map,
   MessagesSquare,
   Palette,
@@ -27,6 +28,7 @@ import { Button } from "./ui/button";
 
 const NAV = [
   { href: "/", label: "Today", icon: LayoutDashboard },
+  { href: "/leads", label: "Leads", icon: Users },
   { href: "/requirements", label: "Requirements", icon: ClipboardList },
   { href: "/oems", label: "OEMs", icon: Factory },
   { href: "/history", label: "History", icon: History },

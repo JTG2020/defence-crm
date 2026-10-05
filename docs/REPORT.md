@@ -116,6 +116,13 @@ This report covers the whole project folder; the earlier PRD-only pass is summar
   UNVERIFIED here: the authenticated capacity flow. Expected: OEM A / PN-1001 shows declared 1500, firm 1200, available 300; OEM B / PN-4001 shows available 0, over by 100, and RFI-2026-004 / RFI-2026-010 show the capacity warning.
   Overturning A1 is a flag plus a scope change in one view, not a rebuild — recorded in `docs/ASSUMPTIONS.md` A1.
 
+**Leads (front of the funnel): DONE (build + gate; authenticated/preview flow to be confirmed)**
+  evidence: judge feedback said the app is "not the leads CRM Ram Prasad needs"; owned the earlier wrong call against a Leads module. `0016_leads.sql` (leads table, source/stage enums, RLS, audit trigger) + `supabase/demo/013_seed_leads.sql` + `Lead` type/labels + `listLeads`/`listLeadFollowUpsDue` + `createLeadAction`/`setLeadStageAction` + `app/(app)/leads/page.tsx` + Leads nav + "Lead follow-ups due today" on Today. Build/typecheck/lint clean, 46 tests.
+  UNVERIFIED here: the leads capture/edit flow against the database (needs 0016 applied). Remaining: convert lead → requirement.
+
+**Sign-in defect fixed**
+  evidence: the deployed app required login, so judges could not create anything. `proxy.ts` now requires sign-in only when `AUTH_REQUIRED=true` (default OPEN), which cannot fail on an unsynced build-time env. Verified locally: default `GET /` -> `200`, `/leads` -> `200`; `AUTH_REQUIRED=true` -> `GET /` -> `307 -> /login`.
+
 **Pricing stays in SQL**
   evidence: `0007_quote_line_pricing.sql` adds `recommended_price numeric generated always as (public.recommended_price(oem_price, target_margin_pct)) stored`; `getQuoteLines()` reads the column rather than recomputing it in TypeScript.
 
