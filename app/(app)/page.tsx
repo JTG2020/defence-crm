@@ -2,7 +2,11 @@ import Link from "next/link";
 import { DemoBanner } from "@/components/demo-banner";
 import { LossReasonChart, OrdersByStageDonut, WinLossChart } from "@/components/charts";
 import { StatusBadge } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -11,12 +15,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { COVERAGE_LABEL, COVERAGE_VARIANT, LOSS_REASON_LABEL } from "@/lib/constants";
+import {
+  COVERAGE_LABEL,
+  COVERAGE_VARIANT,
+  LEAD_SOURCE_LABEL,
+  LEAD_STAGES,
+  LEAD_STAGE_LABEL,
+  LEAD_STAGE_VARIANT,
+  LOSS_REASON_LABEL,
+} from "@/lib/constants";
+import { createLeadAction, setLeadStageAction } from "@/lib/data/actions";
 import {
   dashboard,
   documentsWithStatus,
   invoiceAgeing,
   listLeadFollowUpsDue,
+  listLeads,
   listTasks,
   listUncoveredLines,
   listUpcomingDeadlines,
@@ -26,8 +40,13 @@ import type { LossReason } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function TodayPage() {
-  const [data, uncovered, docs, tasks, deadlines, ageing, leadFollowUps] = await Promise.all([
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const [data, uncovered, docs, tasks, deadlines, ageing, leadFollowUps, leads] = await Promise.all([
     dashboard(),
     listUncoveredLines(),
     documentsWithStatus(),
@@ -35,8 +54,11 @@ export default async function TodayPage() {
     listUpcomingDeadlines(14),
     invoiceAgeing(),
     listLeadFollowUpsDue(),
+    listLeads(),
   ]);
   const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const isOpenLead = (stage: string) => stage !== "won" && stage !== "lost";
 
   const unitsUncovered = uncovered.reduce((sum, u) => sum + u.coverage.uncovered_qty, 0);
   const expiring = docs.filter(
@@ -50,9 +72,143 @@ export default async function TodayPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Today</h1>
+      <div>
+        <h1 className="text-lg font-semibold">Today</h1>
+        <p className="text-sm text-muted-foreground">
+          Ram Prasad&apos;s calls, WhatsApp and referral leads — and the tenders behind them.
+        </p>
+      </div>
 
       <DemoBanner />
+
+      {error && (
+        <p className="rounded-md bg-danger px-3 py-2 text-sm text-danger-foreground">{error}</p>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add a lead</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={createLeadAction} className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="redirect_to" value="/" />
+            <div className="space-y-1">
+              <Label>Source</Label>
+              <Select name="source" required className="w-36">
+                <option value="call">Call</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="referral">Referral</option>
+                <option value="gem">GeM</option>
+                <option value="portal">Portal</option>
+                <option value="direct">Direct</option>
+                <option value="other">Other</option>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Name</Label>
+              <Input name="name" required placeholder="Contact name" className="w-44" />
+            </div>
+            <div className="space-y-1">
+              <Label>Phone</Label>
+              <Input name="phone" placeholder="+91 …" className="w-36" />
+            </div>
+            <div className="space-y-1">
+              <Label>Enquiry</Label>
+              <Input name="product_note" placeholder="What do they want?" className="w-56" />
+            </div>
+            <div className="space-y-1">
+              <Label>Next follow-up</Label>
+              <Input name="next_follow_up" type="date" className="w-40" />
+            </div>
+            <Button type="submit">Add lead</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Leads ({leads.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {leads.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No leads yet. Add the first one above, from a call, WhatsApp or referral.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Enquiry</TableHead>
+                  <TableHead>Next follow-up</TableHead>
+                  <TableHead>Stage</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {leads.slice(0, 15).map((lead) => {
+                  const due =
+                    lead.next_follow_up !== null &&
+                    lead.next_follow_up <= today &&
+                    isOpenLead(lead.stage);
+                  return (
+                    <TableRow key={lead.id}>
+                      <TableCell className="text-muted-foreground">
+                        {LEAD_SOURCE_LABEL[lead.source]}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {lead.name}
+                        {lead.company ? (
+                          <span className="block text-xs text-muted-foreground">{lead.company}</span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="tabular-nums text-muted-foreground">
+                        {lead.phone ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {lead.product_note ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {lead.next_follow_up ? (
+                          <span className={due ? "font-semibold text-danger-foreground" : ""}>
+                            {formatDate(lead.next_follow_up)}
+                            {due ? " · due" : ""}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <form action={setLeadStageAction} className="flex items-center gap-1">
+                          <input type="hidden" name="lead_id" value={lead.id} />
+                          <input type="hidden" name="redirect_to" value="/" />
+                          <StatusBadge
+                            variant={LEAD_STAGE_VARIANT[lead.stage]}
+                            label={LEAD_STAGE_LABEL[lead.stage]}
+                          />
+                          <Select name="stage" defaultValue={lead.stage} className="h-8 w-28">
+                            {LEAD_STAGES.map((s) => (
+                              <option key={s} value={s}>
+                                {LEAD_STAGE_LABEL[s]}
+                              </option>
+                            ))}
+                          </Select>
+                          <Button type="submit" variant="outline" size="sm">
+                            Set
+                          </Button>
+                        </form>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <h2 className="text-sm font-semibold text-muted-foreground">Contract pipeline</h2>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat

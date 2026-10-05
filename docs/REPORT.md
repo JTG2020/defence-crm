@@ -123,6 +123,9 @@ This report covers the whole project folder; the earlier PRD-only pass is summar
 **Sign-in defect fixed**
   evidence: the deployed app required login, so judges could not create anything. `proxy.ts` now requires sign-in only when `AUTH_REQUIRED=true` (default OPEN), which cannot fail on an unsynced build-time env. Verified locally: default `GET /` -> `200`, `/leads` -> `200`; `AUTH_REQUIRED=true` -> `GET /` -> `307 -> /login`.
 
+**Main screen made lead-first (second judge feedback): DONE**
+  evidence: the judge could not add a lead or change a stage on the main screen (the controls were only on `/leads`) and the banner wrongly said reminders were Phase Two. Today now opens with a subtitle naming Ram Prasad's calls/WhatsApp/referrals, an **Add a lead** card, and a **Leads** table with a **stage control on every row**; the tender KPIs sit below a "Contract pipeline" heading. `DemoBanner` no longer mentions Phase Two. Verified: `GET /` -> `200` renders "Add a lead", the Leads table, source options Call/WhatsApp/Referral and "Contract pipeline"; the banner string "Phase Two" is gone. Requires `0016` + `demo/013` + the anon write block (`demo/012`) for a judge to save a lead.
+
 **Pricing stays in SQL**
   evidence: `0007_quote_line_pricing.sql` adds `recommended_price numeric generated always as (public.recommended_price(oem_price, target_margin_pct)) stored`; `getQuoteLines()` reads the column rather than recomputing it in TypeScript.
 

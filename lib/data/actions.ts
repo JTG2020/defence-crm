@@ -492,19 +492,22 @@ export async function completeTaskAction(formData: FormData) {
 }
 
 // Capture a lead from a call, WhatsApp, referral, GeM, a portal or a direct enquiry.
+// `redirect_to` lets the same form live on Today (/) or the Leads screen (/leads) and return there.
 export async function createLeadAction(formData: FormData) {
   const source = String(formData.get("source") ?? "call");
   const stage = String(formData.get("stage") ?? "new");
   const name = String(formData.get("name") ?? "").trim();
+  const rawTarget = String(formData.get("redirect_to") ?? "/leads");
+  const target = rawTarget.startsWith("/") ? rawTarget : "/leads";
 
   if (!name) {
-    redirect("/leads?error=" + encodeURIComponent("A name is required for a lead"));
+    redirect(`${target}?error=` + encodeURIComponent("A name is required for a lead"));
   }
   if (!LEAD_SOURCES.includes(source as LeadSource)) {
-    redirect("/leads?error=" + encodeURIComponent("Choose a valid source"));
+    redirect(`${target}?error=` + encodeURIComponent("Choose a valid source"));
   }
   if (!LEAD_STAGES.includes(stage as LeadStage)) {
-    redirect("/leads?error=" + encodeURIComponent("Choose a valid stage"));
+    redirect(`${target}?error=` + encodeURIComponent("Choose a valid stage"));
   }
 
   const followUp = String(formData.get("next_follow_up") ?? "");
@@ -522,18 +525,20 @@ export async function createLeadAction(formData: FormData) {
     is_demo: false,
   });
   if (error) {
-    redirect("/leads?error=" + encodeURIComponent(error.message));
+    redirect(`${target}?error=` + encodeURIComponent(error.message));
   }
   revalidatePath("/leads");
   revalidatePath("/");
-  redirect("/leads");
+  redirect(target);
 }
 
 export async function setLeadStageAction(formData: FormData) {
   const leadId = String(formData.get("lead_id") ?? "");
   const stage = String(formData.get("stage") ?? "");
+  const rawTarget = String(formData.get("redirect_to") ?? "/leads");
+  const target = rawTarget.startsWith("/") ? rawTarget : "/leads";
   if (!leadId || !LEAD_STAGES.includes(stage as LeadStage)) {
-    redirect("/leads?error=" + encodeURIComponent("Choose a valid stage"));
+    redirect(`${target}?error=` + encodeURIComponent("Choose a valid stage"));
   }
   const supabase = await createServerSupabase();
   const { data: updated, error } = await supabase
@@ -542,14 +547,14 @@ export async function setLeadStageAction(formData: FormData) {
     .eq("id", leadId)
     .select("id");
   if (error) {
-    redirect("/leads?error=" + encodeURIComponent(error.message));
+    redirect(`${target}?error=` + encodeURIComponent(error.message));
   }
   if (!updated || updated.length === 0) {
-    redirect("/leads?error=" + encodeURIComponent(NOTHING_CHANGED));
+    redirect(`${target}?error=` + encodeURIComponent(NOTHING_CHANGED));
   }
   revalidatePath("/leads");
   revalidatePath("/");
-  redirect("/leads");
+  redirect(target);
 }
 
 // Record a structured loss. Status and reason are set together; the DB check constraint requires
